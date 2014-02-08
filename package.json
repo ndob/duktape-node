@@ -11,7 +11,8 @@
 	},
 	"dependencies": 
 	{
-		"bindings": "1.1.1"
+		"bindings": "1.1.1",
+		"node-gyp": "~0.12.1"
 	},
 	"devDependencies": {
 		"mocha": "1.17.1"
