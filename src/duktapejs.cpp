@@ -159,4 +159,4 @@ void init(Handle<Object> exports)
 
 } // unnamed namespace
 
-NODE_MODULE(duktapejs, init)
+NODE_MODULE(duktape, init)

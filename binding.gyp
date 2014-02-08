@@ -2,8 +2,8 @@
 
 	"targets": [
 		{
-			"target_name": "duktapejs",
-			"dependencies": ["duktape"],
+			"target_name": "duktape",
+			"dependencies": ["libduktape"],
 			"include_dirs": [
 				"lib/duktape",
 				"src"
@@ -26,7 +26,7 @@
 			]
 		},
 		{
-			"target_name": "duktape",
+			"target_name": "libduktape",
 			"type": "static_library",
 			"include_dirs": [
 				"lib/duktape"

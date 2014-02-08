@@ -1,5 +1,5 @@
 {
-	"name": "duktapejs",
+	"name": "duktape",
 	"description": "Duktape for node.js",
 	"version": "0.0.1",
 	"main": "./index.js",
