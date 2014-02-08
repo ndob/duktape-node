@@ -1,8 +1,14 @@
 {
 	"name": "duktape",
+	"author": "ndob",
 	"description": "Duktape for node.js",
 	"version": "0.0.1",
 	"main": "./index.js",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ndob/duktape-node"
+	},
 	"dependencies": 
 	{
 		"bindings": "1.1.1"
