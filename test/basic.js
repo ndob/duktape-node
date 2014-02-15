@@ -20,7 +20,7 @@ describe('Duktape', function () {
             return 1+1;\n\
           }\n\
         ";
-    duktape.run("test", "", script, function(error, ret) {
+    duktape.run("test", "", script, null, function(error, ret) {
       equal(error, false);
       equal(ret, 2);
       finished();
@@ -51,7 +51,7 @@ describe('Duktape', function () {
             return 1+1;\n\
           }\n\
         ";
-    duktape.run("test", "", script, function(error, ret) {
+    duktape.run("test", "", script, null, function(error, ret) {
       equal(error, true);
       finished();
     });
@@ -96,7 +96,7 @@ describe('Duktape', function () {
   it('should fail if function name is not string (async)', function (finished) {
     try
     {
-      var ret = duktape.run(true, "", "", function() {});
+      var ret = duktape.run(true, "", "", null, function() {});
     } catch (error) {
       equal(error, "TypeError: Wrong arguments");
       finished();
@@ -108,7 +108,7 @@ describe('Duktape', function () {
   it('should fail if parameter is not string (async)', function (finished) {
     try
     {
-      var ret = duktape.run("", 1, "", function() {});
+      var ret = duktape.run("", 1, "", null, function() {});
     } catch (error) {
       equal(error, "TypeError: Wrong arguments");
       finished();
@@ -120,7 +120,7 @@ describe('Duktape', function () {
   it('should fail if script is not string (async)', function (finished) {
     try
     {
-      var ret = duktape.run("", "", 123, function() {});
+      var ret = duktape.run("", "", 123, null, function() {});
     } catch (error) {
       equal(error, "TypeError: Wrong arguments");
       finished();
@@ -144,7 +144,7 @@ describe('Duktape', function () {
   it('should fail if script callback is not a function (async)', function (finished) {
     try
     {
-      var ret = duktape.run("", "", "", "");
+      var ret = duktape.run("", "", "", null, "");
     } catch (error) {
       equal(error, "TypeError: Wrong arguments");
       finished();
