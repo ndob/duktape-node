@@ -47,7 +47,7 @@ duktape.run("helloFun", "world", script, function(error, ret) {
 });
 ```
 
-### runSync(functionName, parameter, script, callback)
+### runSync(functionName, parameter, script)
 
 **Description**
 
