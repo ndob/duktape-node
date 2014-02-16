@@ -1,3 +1,5 @@
+#pragma once
+
 #include <duktape.h>
 
 #include <string>
@@ -13,7 +15,7 @@ struct Result
 	std::string value;
 };
 
-typedef std::function<std::string(std::string)> Callback;
+typedef std::function<std::string(const std::string&)> Callback;
 
 class DuktapeVM
 {
@@ -21,8 +23,8 @@ public:
 	DuktapeVM();
 	~DuktapeVM();
 
-	Result run(std::string scriptName, std::string parameter, std::string script);
-	void registerCallback(std::string functionName, Callback callback);
+	Result run(const std::string& scriptName, const std::string& parameter, const std::string& script);
+	void registerCallback(const std::string& functionName, Callback callback);
 
 private:
 	duk_context* m_ctx;

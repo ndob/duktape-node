@@ -178,7 +178,7 @@ Handle<Value> run(const Arguments& args)
 
 			auto apiCallbackFunc = Local<Function>::Cast(value);
 			auto persistentApiCallbackFunc = Persistent<Function>::New(apiCallbackFunc);
-			auto duktapeToNodeBridge = duktape::Callback([persistentApiCallbackFunc] (std::string parameter) 
+			auto duktapeToNodeBridge = duktape::Callback([persistentApiCallbackFunc] (const std::string& parameter) 
 			{
 				// We're on not on libuv/V8 main thread. Signal main to run 
 				// callback function and wait for an answer.
@@ -248,7 +248,7 @@ Handle<Value> runSync(const Arguments& args)
 
 			Local<Function> apiCallbackFunc = Local<Function>::Cast(value);
 
-			auto duktapeToNodeBridge = duktape::Callback([apiCallbackFunc] (std::string paramString) 
+			auto duktapeToNodeBridge = duktape::Callback([apiCallbackFunc] (const std::string& paramString) 
 			{
 				Handle<Value> argv[1];
 				argv[0] = String::New(paramString.c_str());

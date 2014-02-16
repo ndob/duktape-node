@@ -27,25 +27,20 @@ void unregisterContext(duk_context* ctx)
 	}
 }
 
-void addCallback(duk_context* ctx, std::string functionName, duktape::Callback callbackFunc)
+void addCallback(duk_context* ctx, const std::string& functionName, duktape::Callback callbackFunc)
 {
 	auto context = s_callbackCache.find(ctx);
 	if(context != s_callbackCache.end())
 	{
 		auto callback = context->second.find(functionName);
-		if(callback != context->second.end())
+		if(callback == context->second.end())
 		{
-			std::cerr << "Callback already registered." << std::endl;
-		}
-		else
-		{
-			std::cerr << "Callback registered." << functionName << std::endl;
 			context->second[functionName] = callbackFunc;
 		}
 	}
 }
 
-std::string doCallback(duk_context* ctx, std::string callbackName, std::string parameter)
+std::string doCallback(duk_context* ctx, const std::string& callbackName, const std::string& parameter)
 {
 	auto context = s_callbackCache.find(ctx);
 	if(context != s_callbackCache.end())
@@ -108,9 +103,9 @@ DuktapeVM::~DuktapeVM()
 	duk_destroy_heap(m_ctx);
 }
 
-Result DuktapeVM::run(std::string scriptName, 
-	std::string parameter, 
-	std::string script) 
+Result DuktapeVM::run(const std::string& scriptName, 
+	const std::string& parameter, 
+	const std::string& script) 
 {
 	Result res;
 	int rc = 0;
@@ -162,7 +157,7 @@ error:
 	return res;
 }
 
-void DuktapeVM::registerCallback(std::string functionName, Callback callback) 
+void DuktapeVM::registerCallback(const std::string& functionName, Callback callback) 
 {
 	duk_push_global_object(m_ctx);
 	duk_push_c_function(m_ctx, callbackHandler, 1 /* number of parameters */);
