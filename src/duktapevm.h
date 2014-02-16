@@ -1,7 +1,12 @@
+#pragma once
+
+#include "callback.h"
+
+#include <duktape.h>
+
 #include <string>
 
-namespace duktape 
-{
+namespace duktape {
 
 struct Result
 {
@@ -10,6 +15,17 @@ struct Result
 	std::string value;
 };
 
-Result runInVM(std::string scriptName, std::string parameter, std::string script);
+class DuktapeVM
+{
+public:
+	DuktapeVM();
+	~DuktapeVM();
+
+	Result run(const std::string& scriptName, const std::string& parameter, const std::string& script);
+	void registerCallback(const std::string& functionName, Callback callback);
+
+private:
+	duk_context* m_ctx;
+};
 
 }  // namespace duktape
