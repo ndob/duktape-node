@@ -64,22 +64,44 @@ private:
 	WorkRequest* m_workRequest;
 };
 
+void UvAsyncCloseCB(uv_handle_s* handle)
+{
+	delete (uv_async_t*) handle;
+}
+
 struct APICallbackSignaling
 {	
-	APICallbackSignaling(Persistent<Function> callback, std::string parameter):
+	APICallbackSignaling(Persistent<Function> callback, std::string parameter, uv_async_cb cbFunc):
 	 callback(callback)
 	,parameter(parameter)
 	,returnValue("")
-	{}
+	,cbFunc(cbFunc)
+	,async(new uv_async_t)
+	{
+		uv_mutex_init(&mutex);
+		uv_cond_init(&cv);
+		uv_async_init(uv_default_loop(), async, cbFunc);	
+	}
+
+	~APICallbackSignaling()
+	{
+		uv_mutex_destroy(&mutex);
+		uv_cond_destroy(&cv);
+		// TODO: check memory leaks
+		uv_close((uv_handle_t*) async, &UvAsyncCloseCB);
+	}
 
 	Persistent<Function> callback;
 	std::string parameter;
 	std::string returnValue;
-};
 
-uv_async_t async;
-uv_cond_t cv;
-uv_mutex_t mutex;
+	uv_cond_t cv;
+	uv_mutex_t mutex;
+	uv_async_cb cbFunc;
+
+	// Has to be on heap, because of closing logic.
+	uv_async_t* async;
+};
 
 void onWork(uv_work_t* req)
 {
@@ -93,11 +115,6 @@ void onWork(uv_work_t* req)
 
 void onWorkDone(uv_work_t* req, int status)
 {
-	// Dispose thread signaling.
-	uv_close((uv_handle_t*) &async, NULL);
-	uv_mutex_destroy(&mutex);
-	uv_cond_destroy(&cv);
-
 	ScopedUvWorkRequest uvReq(req);
 	WorkRequest* work = uvReq.getWorkRequest();
 
@@ -114,13 +131,12 @@ void onWorkDone(uv_work_t* req, int status)
 	{
 		FatalException(try_catch);
 	}
-
 }
 
-void callV8FunctionOnMainThread(uv_async_t *handle, int status) 
+void callV8FunctionOnMainThread(uv_async_t* handle, int status) 
 {
-	uv_mutex_lock(&mutex);
 	auto signalData = static_cast<APICallbackSignaling*> (handle->data);
+	uv_mutex_lock(&signalData->mutex);
 
 	HandleScope scope;
 	Handle<Value> argv[1];
@@ -129,8 +145,8 @@ void callV8FunctionOnMainThread(uv_async_t *handle, int status)
 	String::Utf8Value retString(retVal);
 	signalData->returnValue = std::string(*retString);
 
-	uv_cond_signal(&cv);
-	uv_mutex_unlock(&mutex);
+	uv_cond_signal(&signalData->cv);
+	uv_mutex_unlock(&signalData->mutex);
 }
 
 Handle<Value> run(const Arguments& args) 
@@ -182,16 +198,18 @@ Handle<Value> run(const Arguments& args)
 			{
 				// We're on not on libuv/V8 main thread. Signal main to run 
 				// callback function and wait for an answer.
-				uv_mutex_lock(&mutex);
+				std::unique_ptr<APICallbackSignaling> cbsignaling(new APICallbackSignaling(	persistentApiCallbackFunc, 
+																							parameter,
+																							callV8FunctionOnMainThread));
+								
+				uv_mutex_lock(&cbsignaling->mutex);
 
-				std::unique_ptr<APICallbackSignaling> cbsignaling(new APICallbackSignaling(persistentApiCallbackFunc, parameter));
-				async.data = (void*) cbsignaling.get();
-		        uv_async_send(&async);
+				cbsignaling->async->data = (void*) cbsignaling.get();
 
-		        uv_cond_wait(&cv, &mutex);
-		        uv_mutex_unlock(&mutex);
-
-		        std::string retStr(cbsignaling->returnValue);
+				uv_async_send(cbsignaling->async);
+				uv_cond_wait(&cbsignaling->cv, &cbsignaling->mutex);
+				std::string retStr(cbsignaling->returnValue);
+				uv_mutex_unlock(&cbsignaling->mutex);
 
 				return retStr;
 			});
@@ -201,13 +219,9 @@ Handle<Value> run(const Arguments& args)
 		}		
 	}
 
-
     uv_work_t* req = new uv_work_t();
     req->data = workReq;
 
-	uv_mutex_init(&mutex);
-	uv_cond_init(&cv);
-	uv_async_init(uv_default_loop(), &async, callV8FunctionOnMainThread);
 	uv_queue_work(uv_default_loop(), req, onWork, onWorkDone);
 
 	return scope.Close(Undefined());
