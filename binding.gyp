@@ -11,7 +11,9 @@
 			"sources": [ 
 				"src/duktapejs.cpp", 
 				"src/duktapevm.cpp",
-				"src/callbackcache.cpp"
+				"src/callbackcache.cpp",
+				"src/run_sync.cpp",
+				"src/run_async.cpp"
 			],
 			"conditions": [
 				["OS=='linux'", {
