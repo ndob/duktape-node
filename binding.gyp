@@ -9,7 +9,7 @@
 				"src"
 			],
 			"sources": [ 
-				"src/duktapejs.cpp", 
+				"src/duktape_node_main.cpp", 
 				"src/duktapevm.cpp",
 				"src/callbackcache.cpp",
 				"src/run_sync.cpp",
