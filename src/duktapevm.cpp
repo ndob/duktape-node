@@ -121,7 +121,7 @@ Result DuktapeVM::run(std::string scriptName,
 	if (rc != DUK_EXEC_SUCCESS) 
 		goto error;	
 
-	// Prepare and call wrapper-function.
+	// Prepare and call function.
 	duk_push_global_object(m_ctx);
 	duk_get_prop_string(m_ctx, -1, scriptName.c_str());
 	duk_push_string(m_ctx, parameter.c_str());	
