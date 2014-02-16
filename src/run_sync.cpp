@@ -75,4 +75,3 @@ Handle<Value> runSync(const Arguments& args)
 }
 
 } // namespace duktape
-
