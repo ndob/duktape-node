@@ -42,8 +42,10 @@ Result serializeData(duk_context* ctx, int stackPosition)
 		case DUK_TYPE_OBJECT:
 			if(!duk_is_function(ctx, stackPosition) && !duk_is_null_or_undefined(ctx, stackPosition))
 			{
+				duk_dup(ctx, stackPosition);
 				res.errorCode = duk_safe_call(ctx, safeToJSON, 1 /* number of params */, 1 /* number of return values */, DUK_INVALID_INDEX);
-				res.value = duk_to_string(ctx, stackPosition);
+				res.value = duk_to_string(ctx, -1);
+				duk_pop(ctx);
 			}
 			break;
 		default:
@@ -60,7 +62,7 @@ int callbackHandler(duk_context* ctx)
 	
 	std::string callbackName = duk_to_string(ctx, -1);
 	std::string parameter = "";
-	Result res = serializeData(ctx, 0);
+	Result res = serializeData(ctx, -3);
 
 	std::string retVal = cbCache.doCallbackToV8(ctx, callbackName, res.value);
 	duk_push_string(ctx, retVal.c_str());

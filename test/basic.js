@@ -1,7 +1,7 @@
 var equal = require('assert').equal,
     duktape = require('../index');
 
-describe('Duktape', function () {
+describe('Duktape basic', function () {
 
   it('should run a script (sync)', function (finished) {
     var script = "\
@@ -10,7 +10,7 @@ describe('Duktape', function () {
           }\n\
         ";
     var ret = duktape.runSync("test", "", script);
-    equal(ret, 2)
+    equal(ret, 2);
     finished();
   });
 
