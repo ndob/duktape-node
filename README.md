@@ -10,7 +10,7 @@ This package provides facilities for running a single script on an isolated Dukt
     
 ## API
 
-### run(functionName, parameter, script, callback)
+### run(functionName, parameter, script, apiObject, callback)
 **Description**
 
 Runs a single script on duktape and returns error status and return value to callback.
@@ -20,6 +20,10 @@ Runs a single script on duktape and returns error status and return value to cal
 * functionName: function to run (string)
 * parameter: parameter for function (string)
 * script: whole javascript source of script (string)
+* apiObject: API for script (object)
+  * properties:
+    * key: name for function
+    * value: function to call
 * callback: function with signature `function(error, returnValue)`
   * error: error status (boolean)
   * returnValue: return value from script (string) or error string in case of an error
@@ -28,15 +32,23 @@ Runs a single script on duktape and returns error status and return value to cal
 ```javascript
 var duktape = require('duktape');
 
-var script = "
-  function helloFun(parameterString) {
-    return { 
-      value: 'hello ' + parameterString,
-      extra: 'bye ' + parameterString
-    };
+var apiFunction = function(name) {
+    return "hello " + name;
+}
+
+var script = " \
+  function helloFun(parameterString) { \
+    return { \
+      value: hello(parameterString), \
+      extra: 'bye ' + parameterString \
+    }; \
   }";
+
+var apiObject = {
+    hello: apiFunction
+};
   
-duktape.run("helloFun", "world", script, function(error, ret) {
+duktape.run("helloFun", "world", script, apiObject, function(error, ret) {
   if(error) {
     console.log("got error: " + ret);
   } else {
@@ -47,7 +59,7 @@ duktape.run("helloFun", "world", script, function(error, ret) {
 });
 ```
 
-### runSync(functionName, parameter, script)
+### runSync(functionName, parameter, script, apiObject)
 
 **Description**
 
@@ -58,21 +70,33 @@ duktape.run("helloFun", "world", script, function(error, ret) {
 * functionName: function to run (string)
 * parameter: parameter for function (string)
 * script: whole javascript source of script (string)
+* apiObject: API for script (object)
+  * properties:
+    * key: name for function
+    * value: function to call
 
 **Example**
 ```javascript
 var duktape = require('duktape');
 
-var script = "
-  function helloFun(parameterString) {
-    return { 
-      value: 'hello ' + parameterString,
-      extra: 'bye ' + parameterString
-    };
+var apiFunction = function(name) {
+    return "hello " + name;
+}
+
+var apiObject = {
+    hello: apiFunction
+};
+
+var script = " \
+  function helloFun(parameterString) { \
+    return { \
+      value: hello(parameterString), \
+      extra: 'bye ' + parameterString \
+    }; \
   }";
   
 try {
-  var ret = duktape.runSync("helloFun", "world", script);
+  var ret = duktape.runSync("helloFun", "world", script, apiObject);
   var retVal = JSON.parse(ret);
   console.log(retVal.value);
   console.log(retVal.extra);
@@ -91,4 +115,4 @@ This package just runs scripts on duktape VM without doing much else. Everything
   
 ## Known issues
 * Probably does not compile on other compilers than gcc (has been tested on linux/gcc4.8.1).
-* No possilibity for defining external APIs, that would be accessible from scripts.
+
