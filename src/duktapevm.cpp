@@ -1,58 +1,12 @@
 #include "duktapevm.h"
 
-#include <map>
+#include "callbackcache.h"
+
 #include <iostream>
 
 namespace {	
 
-/* 	
-Key: context
-Value: Map of function name and callback			
-*/
-typedef std::map<void*, std::map<std::string, duktape::Callback> > CallbackContainer;
-
-static CallbackContainer s_callbackCache;
-
-void registerContext(duk_context* ctx)
-{
-	s_callbackCache[ctx];
-}
-
-void unregisterContext(duk_context* ctx)
-{
-	auto context = s_callbackCache.find(ctx);
-	if(context != s_callbackCache.end())
-	{
-		s_callbackCache.erase(context);
-	}
-}
-
-void addCallback(duk_context* ctx, const std::string& functionName, duktape::Callback callbackFunc)
-{
-	auto context = s_callbackCache.find(ctx);
-	if(context != s_callbackCache.end())
-	{
-		auto callback = context->second.find(functionName);
-		if(callback == context->second.end())
-		{
-			context->second[functionName] = callbackFunc;
-		}
-	}
-}
-
-std::string doCallback(duk_context* ctx, const std::string& callbackName, const std::string& parameter)
-{
-	auto context = s_callbackCache.find(ctx);
-	if(context != s_callbackCache.end())
-	{
-		auto callback = context->second.find(callbackName);
-		if(callback != context->second.end())
-		{
-			return callback->second(parameter);
-		}
-	}
-	return "";
-}
+static duktape::CallbackCache cbCache;
 
 int callbackHandler(duk_context* ctx) 
 {
@@ -63,7 +17,7 @@ int callbackHandler(duk_context* ctx)
 	std::string callbackName = duk_to_string(ctx, -1);
 	std::string parameter = duk_to_string(ctx, 0);
 
-	std::string retVal = doCallback(ctx, callbackName, parameter);
+	std::string retVal = cbCache.doCallback(ctx, callbackName, parameter);
 	duk_push_string(ctx, retVal.c_str());
 
 	return 1;
@@ -94,12 +48,12 @@ namespace duktape {
 DuktapeVM::DuktapeVM():
 m_ctx(duk_create_heap_default())
 {
-	registerContext(m_ctx);
+	cbCache.registerContext(m_ctx);
 }
 
 DuktapeVM::~DuktapeVM()
 {
-	unregisterContext(m_ctx);
+	cbCache.unregisterContext(m_ctx);
 	duk_destroy_heap(m_ctx);
 }
 
@@ -169,7 +123,7 @@ void DuktapeVM::registerCallback(const std::string& functionName, Callback callb
 	duk_put_prop_string(m_ctx, -2, functionName.c_str());
 	duk_pop(m_ctx);
 
-	addCallback(m_ctx, functionName, callback);
+	cbCache.addCallback(m_ctx, functionName, callback);
 }
 
 

@@ -10,7 +10,8 @@
 			],
 			"sources": [ 
 				"src/duktapejs.cpp", 
-				"src/duktapevm.cpp"
+				"src/duktapevm.cpp",
+				"src/callbackcache.cpp"
 			],
 			"conditions": [
 				["OS=='linux'", {

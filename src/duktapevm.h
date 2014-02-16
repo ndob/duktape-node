@@ -1,12 +1,12 @@
 #pragma once
 
+#include "callback.h"
+
 #include <duktape.h>
 
 #include <string>
-#include <functional>
 
-namespace duktape 
-{
+namespace duktape {
 
 struct Result
 {
@@ -14,8 +14,6 @@ struct Result
 	int errorCode;
 	std::string value;
 };
-
-typedef std::function<std::string(const std::string&)> Callback;
 
 class DuktapeVM
 {
