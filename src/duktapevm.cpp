@@ -82,7 +82,13 @@ int safeEval(duk_context* ctx)
 
 int safeCall(duk_context* ctx)
 {
-	duk_call(ctx, 2 /* number of params */);
+	duk_call(ctx, 1 /* number of params */);
+	return 1;
+}
+
+int safeToJSON(duk_context* ctx)
+{
+	duk_json_encode(ctx, -1);
 	return 1;
 }
 
@@ -109,31 +115,50 @@ Result DuktapeVM::run(std::string scriptName,
 	Result res;
 	int rc = 0;
 
-	script += "\nfunction __wrap(functionName, parameter) { return JSON.stringify(this[functionName](parameter)); }";
-
 	// Eval script
 	duk_push_string(m_ctx, script.c_str());
 	rc = duk_safe_call(m_ctx, safeEval, 1 /* number of params */, 1 /* number of return values */, DUK_INVALID_INDEX);
 	if (rc != DUK_EXEC_SUCCESS) 
-	{
-		res.value = duk_to_string(m_ctx, -1);
-		res.errorCode = rc;
-		return res;
-	}		
+		goto error;	
 
 	// Prepare and call wrapper-function.
 	duk_push_global_object(m_ctx);
-	duk_get_prop_string(m_ctx, -1, "__wrap");
-	duk_push_string(m_ctx, scriptName.c_str());
+	duk_get_prop_string(m_ctx, -1, scriptName.c_str());
 	duk_push_string(m_ctx, parameter.c_str());	
-	rc = duk_safe_call(m_ctx, safeCall, 2 /* number of params */, 1 /* number of return values */, DUK_INVALID_INDEX);
-	if(rc != 0)
+	rc = duk_safe_call(m_ctx, safeCall, 1 /* number of params */, 1 /* number of return values */, DUK_INVALID_INDEX);
+	if(rc != DUK_EXEC_SUCCESS)
+		goto error;
+
+	// Serialize output
+	switch(duk_get_type(m_ctx, -1))
 	{
-		res.errorCode = rc;
+		case DUK_TYPE_BOOLEAN:
+		case DUK_TYPE_NUMBER:
+		case DUK_TYPE_STRING:
+			res.value = duk_to_string(m_ctx, -1);
+			break;
+		case DUK_TYPE_OBJECT:
+			if(!duk_is_function(m_ctx, -1) && !duk_is_null_or_undefined(m_ctx, -1))
+			{
+				rc = duk_safe_call(m_ctx, safeToJSON, 1 /* number of params */, 1 /* number of return values */, DUK_INVALID_INDEX);
+				if(rc != DUK_EXEC_SUCCESS)
+					goto error;
+
+				res.value = duk_to_string(m_ctx, -1);
+			}
+			break;
+		default:
+			res.value = "";
+			break;
 	}
 
-	res.value = duk_to_string(m_ctx, -1);
 	duk_pop(m_ctx);
+	return res;
+
+error:
+	// Get error string.
+	res.value = duk_to_string(m_ctx, -1);
+	res.errorCode = rc;
 	return res;
 }
 
