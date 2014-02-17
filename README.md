@@ -115,4 +115,4 @@ This package just runs scripts on duktape VM without doing much else. Everything
   
 ## Known issues
 * Probably does not compile on other compilers than gcc (has been tested on linux/gcc4.8.1).
-
+* No async support from defined API-functions back to duktape (ie. no callbacks).
