@@ -42,7 +42,8 @@ Handle<Value> runSync(const Arguments& args)
 
 			Local<Function> apiCallbackFunc = Local<Function>::Cast(value);
 
-			auto duktapeToNodeBridge = duktape::Callback([apiCallbackFunc] (const std::string& paramString) 
+			auto duktapeToNodeBridge = 
+			duktape::Callback([apiCallbackFunc] (const std::string& paramString) -> std::string
 			{
 				Handle<Value> argv[1];
 				argv[0] = String::New(paramString.c_str());

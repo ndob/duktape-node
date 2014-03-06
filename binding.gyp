@@ -19,7 +19,7 @@
 				["OS=='linux'", {
 					"cflags": [
 						"-O2",
-						"-std=c++11",
+						"-std=c++0x",
 						"-pedantic-errors",
 						"-Wall",
 						"-fstrict-aliasing",
