@@ -76,11 +76,6 @@ private:
 	WorkRequest* m_workRequest;
 };
 
-void UvAsyncCloseCB(uv_handle_s* handle)
-{
-	delete (uv_async_t*) handle;
-}
-
 struct APICallbackSignaling
 {	
 	APICallbackSignaling(Persistent<Function> callback, std::string parameter, uv_async_cb cbFunc):
@@ -99,7 +94,11 @@ struct APICallbackSignaling
 	{
 		uv_mutex_destroy(&mutex);
 		uv_cond_destroy(&cv);
-		uv_close((uv_handle_t*) async, &UvAsyncCloseCB);
+		uv_close((uv_handle_t*) async, [] (uv_handle_s* handle)
+		{
+			// "handle" is "async"-parameter passed to uv_close
+			delete (uv_async_t*) handle;
+		});
 	}
 
 	Persistent<Function> callback;
