@@ -8,6 +8,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 using namespace v8;
 using node::FatalException;
@@ -23,10 +24,22 @@ struct WorkRequest
 	,callback(callback)
 	,hasError(false)
 	,returnValue()
-	{		
+	{
 	};
 
+	~WorkRequest()
+	{
+		for(auto& func : apiCallbackFunctions)
+		{
+			func.Dispose();
+			func.Clear();
+		}
+		callback.Dispose();
+		callback.Clear();
+	}
+
 	duktape::DuktapeVM vm;
+	std::vector< Persistent<Function> > apiCallbackFunctions;
 
 	// in
 	std::string functionName;
@@ -49,7 +62,6 @@ struct ScopedUvWorkRequest
 
 	~ScopedUvWorkRequest()
 	{
-		m_workRequest->callback.Dispose();
 		delete m_workRequest;
 		delete m_work;
 	}
@@ -146,6 +158,7 @@ void onWorkDone(uv_work_t* req, int status)
 	{
 		FatalException(try_catch);
 	}
+	scope.Close(Undefined());
 }
 
 } // unnamed namespace
@@ -218,9 +231,12 @@ Handle<Value> run(const Arguments& args)
 				return retStr;
 			});
 
+			// Switch ownership of Persistent-Function to workReq
+			workReq->apiCallbackFunctions.push_back(persistentApiCallbackFunc);
+
 			String::Utf8Value keyStr(key);
 			workReq->vm.registerCallback(std::string(*keyStr), duktapeToNodeBridge);
-		}		
+		}
 	}
 
     uv_work_t* req = new uv_work_t();
