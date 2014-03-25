@@ -7,13 +7,18 @@
 #include <v8.h>
 
 #include <string>
-#include <memory>
 #include <vector>
 
 using namespace v8;
 using node::FatalException;
 
 namespace {
+
+// Forward declaration for APICallbackSignaling destructor.
+void cleanupUvAsync(uv_handle_s* handle);
+
+// Forward declaration for CallbackHelper.
+void callV8FunctionOnMainThread(uv_async_t* handle, int status);
 
 struct WorkRequest
 {
@@ -29,10 +34,10 @@ struct WorkRequest
 
 	~WorkRequest()
 	{
-		for(auto& func : apiCallbackFunctions)
+		for(auto it = apiCallbackFunctions.begin(); it != apiCallbackFunctions.end(); ++it)
 		{
-			func.Dispose();
-			func.Clear();
+			it->Dispose();
+			it->Clear();
 		}
 		callback.Dispose();
 		callback.Clear();
@@ -94,11 +99,7 @@ struct APICallbackSignaling
 	{
 		uv_mutex_destroy(&mutex);
 		uv_cond_destroy(&cv);
-		uv_close((uv_handle_t*) async, [] (uv_handle_s* handle)
-		{
-			// "handle" is "async"-parameter passed to uv_close
-			delete (uv_async_t*) handle;
-		});
+		uv_close((uv_handle_t*) async, &cleanupUvAsync);
 	}
 
 	Persistent<Function> callback;
@@ -112,6 +113,53 @@ struct APICallbackSignaling
 	// Has to be on heap, because of closing logic.
 	uv_async_t* async;
 };
+
+struct CallbackHelper
+{
+	CallbackHelper(Persistent<Function> persistentApiCallbackFunc):
+	m_persistentApiCallbackFunc(persistentApiCallbackFunc)
+	,m_cbsignaling(0)
+	{
+	}
+
+	~CallbackHelper()
+	{
+		if(m_cbsignaling)
+		{
+			delete m_cbsignaling;
+		}
+	}
+
+	std::string operator()(const std::string& paramString)
+	{
+		// We're on not on libuv/V8 main thread. Signal main to run 
+		// callback function and wait for an answer.
+		m_cbsignaling = new APICallbackSignaling(m_persistentApiCallbackFunc, 
+												paramString,
+												callV8FunctionOnMainThread);
+						
+		uv_mutex_lock(&m_cbsignaling->mutex);
+
+		m_cbsignaling->async->data = (void*) m_cbsignaling;
+		uv_async_send(m_cbsignaling->async);
+		uv_cond_wait(&m_cbsignaling->cv, &m_cbsignaling->mutex);
+		std::string retStr(m_cbsignaling->returnValue);
+
+		uv_mutex_unlock(&m_cbsignaling->mutex);
+
+		return retStr;
+	}
+
+private:
+	Persistent<Function> m_persistentApiCallbackFunc;
+	APICallbackSignaling* m_cbsignaling;
+};
+
+void cleanupUvAsync(uv_handle_s* handle)
+{
+	// "handle" is "async"-parameter passed to uv_close
+	delete (uv_async_t*) handle;
+}
 
 void callV8FunctionOnMainThread(uv_async_t* handle, int status) 
 {
@@ -206,29 +254,9 @@ Handle<Value> run(const Arguments& args)
 				return scope.Close(Undefined());
 			}
 
-
 			auto apiCallbackFunc = Local<Function>::Cast(value);
 			auto persistentApiCallbackFunc = Persistent<Function>::New(apiCallbackFunc);
-			auto duktapeToNodeBridge = 
-			duktape::Callback([persistentApiCallbackFunc] (const std::string& parameter) -> std::string 
-			{
-				// We're on not on libuv/V8 main thread. Signal main to run 
-				// callback function and wait for an answer.
-				std::unique_ptr<APICallbackSignaling> cbsignaling(new APICallbackSignaling(	persistentApiCallbackFunc, 
-																							parameter,
-																							callV8FunctionOnMainThread));
-								
-				uv_mutex_lock(&cbsignaling->mutex);
-
-				cbsignaling->async->data = (void*) cbsignaling.get();
-				uv_async_send(cbsignaling->async);
-				uv_cond_wait(&cbsignaling->cv, &cbsignaling->mutex);
-				std::string retStr(cbsignaling->returnValue);
-
-				uv_mutex_unlock(&cbsignaling->mutex);
-
-				return retStr;
-			});
+			auto duktapeToNodeBridge = duktape::Callback(CallbackHelper(persistentApiCallbackFunc));
 
 			// Switch ownership of Persistent-Function to workReq
 			workReq->apiCallbackFunctions.push_back(persistentApiCallbackFunc);
@@ -238,8 +266,8 @@ Handle<Value> run(const Arguments& args)
 		}
 	}
 
-    uv_work_t* req = new uv_work_t();
-    req->data = workReq;
+	uv_work_t* req = new uv_work_t();
+	req->data = workReq;
 
 	uv_queue_work(uv_default_loop(), req, onWork, onWorkDone);
 

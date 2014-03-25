@@ -2,10 +2,37 @@
 
 #include "callback.h"
 #include "duktapevm.h"
+	
+using namespace v8;
+
+namespace {
+
+struct CallbackHelper
+{
+	CallbackHelper(Local<Function> apiCallbackFunc):
+	m_apiCallbackFunc(apiCallbackFunc)
+	{
+	}
+
+	std::string operator()(const std::string& paramString)
+	{
+		Handle<Value> argv[1];
+		argv[0] = String::New(paramString.c_str());
+
+		auto retVal = m_apiCallbackFunc->Call(Context::GetCurrent()->Global(), 1, argv);
+
+		String::Utf8Value retString(retVal);
+
+		return std::string(*retString);
+	}
+
+private:
+	Local<Function> m_apiCallbackFunc;
+};
+
+}
 
 namespace duktape {
-
-using namespace v8;
 
 Handle<Value> runSync(const Arguments& args) 
 {
@@ -42,18 +69,7 @@ Handle<Value> runSync(const Arguments& args)
 
 			Local<Function> apiCallbackFunc = Local<Function>::Cast(value);
 
-			auto duktapeToNodeBridge = 
-			duktape::Callback([apiCallbackFunc] (const std::string& paramString) -> std::string
-			{
-				Handle<Value> argv[1];
-				argv[0] = String::New(paramString.c_str());
-
-				auto retVal = apiCallbackFunc->Call(Context::GetCurrent()->Global(), 1, argv);
-
-				String::Utf8Value retString(retVal);
-
-				return std::string(*retString);
-			});
+			auto duktapeToNodeBridge = duktape::Callback(CallbackHelper(apiCallbackFunc));
 
 			String::Utf8Value keyStr(key);
 			vm.registerCallback(std::string(*keyStr), duktapeToNodeBridge);
