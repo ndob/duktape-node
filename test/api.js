@@ -1,3 +1,5 @@
+/*jshint multistr: true */
+
 var equal = require('assert').equal,
     duktape = require('../index');
 
@@ -92,4 +94,37 @@ describe('Duktape API', function () {
 
   });
 
+  it('API functions should be callable multiple times from script (async)', function (finished) {
+    var script = "\
+          function test() {\n\
+            var ret = exclamate('hello') + exclamate('hello') + exclamate('hello');\
+            return ret;\n\
+          }\n\
+        ";
+    var API = {
+      exclamate: callbackFunc
+    };
+
+    duktape.run("test", "", script, API, function(error, ret) {
+      equal(error, false);
+      equal(ret, "hello!hello!hello!");
+      finished();
+    });
+  });
+
+  it('API functions should be callable multiple times from script (sync)', function (finished) {
+    var script = "\
+          function test() {\n\
+            var ret = exclamate('hello') + exclamate('hello') + exclamate('hello');\
+            return ret;\n\
+          }\n\
+        ";
+    var API = {
+      exclamate: callbackFunc
+    };
+
+    var ret = duktape.runSync("test", "", script, API);
+    equal(ret, "hello!hello!hello!");
+    finished();
+  });
 });

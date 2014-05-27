@@ -1,3 +1,5 @@
+/*jshint multistr: true */
+
 var equal = require('assert').equal,
     duktape = require('../index');
 
