@@ -5,7 +5,7 @@ describe('Duktape API', function () {
 
   var callbackFunc = function(param) {
     return param + "!";
-  }
+  };
 
   it('host program should be able to provide an API (sync)', function (finished) {
     var script = "\
@@ -16,7 +16,7 @@ describe('Duktape API', function () {
         ";
     var API = {
       exclamate: callbackFunc
-    }
+    };
 
     var ret = duktape.runSync("test", "", script, API);
     equal(ret, "hello!");
@@ -32,7 +32,7 @@ describe('Duktape API', function () {
         ";
     var API = {
       exclamate: callbackFunc
-    }
+    };
 
     duktape.run("test", "", script, API, function(error, ret) {
       equal(error, false);
@@ -46,7 +46,7 @@ describe('Duktape API', function () {
     var callbackFunc2 = function(param) {
       var obj = JSON.parse(param);
       return obj.greeting + " " + obj.name + "!";
-    }
+    };
 
     var script = "\
           function test() {\n\
@@ -60,7 +60,7 @@ describe('Duktape API', function () {
         ";
     var API = {
       greet: callbackFunc2
-    }
+    };
 
     var ret = duktape.runSync("test", "", script, API);
     equal(ret, "hey world!");
@@ -73,7 +73,7 @@ describe('Duktape API', function () {
     
     var callbackFunc2 = function(param) {
       return param;
-    }
+    };
 
     var script = "\
           function test() {\n\
@@ -84,7 +84,7 @@ describe('Duktape API', function () {
         ";
     var API = {
       greet: callbackFunc2
-    }
+    };
 
     var ret = duktape.runSync("test", "", script, API);
     equal(ret, "");
