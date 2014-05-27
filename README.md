@@ -1,5 +1,6 @@
 duktape-node
 =========
+[![Build Status](https://travis-ci.org/ndob/duktape-node.svg?branch=master)](https://travis-ci.org/ndob/duktape-node)
 
 Simple [Duktape Javascript engine](http://duktape.org/) integration for node.js. 
 
