@@ -118,41 +118,31 @@ struct CallbackHelper
 {
 	CallbackHelper(Persistent<Function> persistentApiCallbackFunc):
 	m_persistentApiCallbackFunc(persistentApiCallbackFunc)
-	,m_cbsignaling(0)
 	{
-	}
-
-	~CallbackHelper()
-	{
-		if(m_cbsignaling)
-		{
-			delete m_cbsignaling;
-		}
 	}
 
 	std::string operator()(const std::string& paramString)
 	{
 		// We're on not on libuv/V8 main thread. Signal main to run 
 		// callback function and wait for an answer.
-		m_cbsignaling = new APICallbackSignaling(m_persistentApiCallbackFunc, 
-												paramString,
-												callV8FunctionOnMainThread);
+		APICallbackSignaling cbsignaling(m_persistentApiCallbackFunc, 
+										paramString,
+										callV8FunctionOnMainThread);
 						
-		uv_mutex_lock(&m_cbsignaling->mutex);
+		uv_mutex_lock(&cbsignaling.mutex);
 
-		m_cbsignaling->async->data = (void*) m_cbsignaling;
-		uv_async_send(m_cbsignaling->async);
-		uv_cond_wait(&m_cbsignaling->cv, &m_cbsignaling->mutex);
-		std::string retStr(m_cbsignaling->returnValue);
+		cbsignaling.async->data = (void*) &cbsignaling;
+		uv_async_send(cbsignaling.async);
+		uv_cond_wait(&cbsignaling.cv, &cbsignaling.mutex);
+		std::string retStr(cbsignaling.returnValue);
 
-		uv_mutex_unlock(&m_cbsignaling->mutex);
+		uv_mutex_unlock(&cbsignaling.mutex);
 
 		return retStr;
 	}
 
 private:
 	Persistent<Function> m_persistentApiCallbackFunc;
-	APICallbackSignaling* m_cbsignaling;
 };
 
 void cleanupUvAsync(uv_handle_s* handle)
@@ -173,8 +163,8 @@ void callV8FunctionOnMainThread(uv_async_t* handle, int status)
 	String::Utf8Value retString(retVal);
 	signalData->returnValue = std::string(*retString);
 
-	uv_cond_signal(&signalData->cv);
 	uv_mutex_unlock(&signalData->mutex);
+	uv_cond_signal(&signalData->cv);
 }
 
 void onWork(uv_work_t* req)
