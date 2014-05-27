@@ -116,3 +116,4 @@ This package just runs scripts on duktape VM without doing much else. Everything
 ## Known issues
 * Probably does not compile on other compilers than gcc (has been tested on linux: gcc4.8.1, gcc4.6.4, gcc4.4.7).
 * No async support from defined API-functions back to duktape (ie. no callbacks).
+* Tested and compatible with node.js 0.10.x only.
