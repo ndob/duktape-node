@@ -87,6 +87,7 @@ struct APICallbackSignaling
 	 callback(callback)
 	,parameter(parameter)
 	,returnValue("")
+	,done(false)
 	,cbFunc(cbFunc)
 	,async(new uv_async_t)
 	{
@@ -105,6 +106,8 @@ struct APICallbackSignaling
 	Persistent<Function> callback;
 	std::string parameter;
 	std::string returnValue;
+
+	bool done;
 
 	uv_cond_t cv;
 	uv_mutex_t mutex;
@@ -133,7 +136,10 @@ struct CallbackHelper
 
 		cbsignaling.async->data = (void*) &cbsignaling;
 		uv_async_send(cbsignaling.async);
-		uv_cond_wait(&cbsignaling.cv, &cbsignaling.mutex);
+		while(!cbsignaling.done)
+		{
+			uv_cond_wait(&cbsignaling.cv, &cbsignaling.mutex);			
+		}
 		std::string retStr(cbsignaling.returnValue);
 
 		uv_mutex_unlock(&cbsignaling.mutex);
@@ -163,6 +169,7 @@ void callV8FunctionOnMainThread(uv_async_t* handle, int status)
 	String::Utf8Value retString(retVal);
 	signalData->returnValue = std::string(*retString);
 
+	signalData->done = true;
 	uv_mutex_unlock(&signalData->mutex);
 	uv_cond_signal(&signalData->cv);
 }
