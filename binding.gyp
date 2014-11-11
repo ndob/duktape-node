@@ -5,7 +5,7 @@
 			"target_name": "duktape",
 			"dependencies": ["libduktape"],
 			"include_dirs": [
-				"lib/duktape",
+				"lib/duktape/src",
 				"src"
 			],
 			"sources": [ 
@@ -32,10 +32,10 @@
 			"target_name": "libduktape",
 			"type": "static_library",
 			"include_dirs": [
-				"lib/duktape"
+				"lib/duktape/src"
 			],
 			"sources": [ 
-				"lib/duktape/duktape.c"
+				"lib/duktape/src/duktape.c"
 			],
 			"conditions": [
 				["OS=='linux'", {
