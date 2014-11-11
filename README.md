@@ -7,8 +7,18 @@ Simple [Duktape Javascript engine](http://duktape.org/) integration for node.js.
 This package provides facilities for running a single script on an isolated Duktape virtual machine.
 
 ## Installing
-    npm install duktape
-    
+```shell
+npm install duktape
+```
+## Building manually and running tests
+```shell
+git clone https://github.com/ndob/duktape-node.git
+cd duktape-node
+git submodule init
+git submodule update
+npm install
+npm test
+```
 ## API
 
 ### run(functionName, parameter, script, apiObject, callback)
