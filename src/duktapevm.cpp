@@ -43,7 +43,7 @@ Result serializeData(duk_context* ctx, int stackPosition)
 			if(!duk_is_function(ctx, stackPosition) && !duk_is_null_or_undefined(ctx, stackPosition))
 			{
 				duk_dup(ctx, stackPosition);
-				res.errorCode = duk_safe_call(ctx, safeToJSON, 1 /* number of params */, 1 /* number of return values */, DUK_INVALID_INDEX);
+				res.errorCode = duk_safe_call(ctx, safeToJSON, 1 /* number of params */, 1 /* number of return values */);
 				res.value = duk_to_string(ctx, -1);
 				duk_pop(ctx);
 			}
@@ -103,7 +103,7 @@ Result DuktapeVM::run(const std::string& scriptName,
 
 	// 1.Eval script
 	duk_push_string(m_ctx, script.c_str());
-	rc = duk_safe_call(m_ctx, safeEval, 1 /* number of params */, 1 /* number of return values */, DUK_INVALID_INDEX);
+	rc = duk_safe_call(m_ctx, safeEval, 1 /* number of params */, 1 /* number of return values */);
 	if (rc != DUK_EXEC_SUCCESS) 
 		return getError(m_ctx, rc);
 
@@ -111,7 +111,7 @@ Result DuktapeVM::run(const std::string& scriptName,
 	duk_push_global_object(m_ctx);
 	duk_get_prop_string(m_ctx, -1, scriptName.c_str());
 	duk_push_string(m_ctx, parameter.c_str());	
-	rc = duk_safe_call(m_ctx, safeCall, 1 /* number of params */, 1 /* number of return values */, DUK_INVALID_INDEX);
+	rc = duk_safe_call(m_ctx, safeCall, 1 /* number of params */, 1 /* number of return values */);
 	if(rc != DUK_EXEC_SUCCESS)
 		return getError(m_ctx, rc);
 
