@@ -1,5 +1,5 @@
 #include "run_sync.h"
-//#include "run_async.h"
+#include "run_async.h"
 
 #include <nan.h>
 
@@ -17,11 +17,11 @@ NAN_MODULE_INIT(init)
 	Set(target, 
 		New<String>("runSync").ToLocalChecked(), 
 		GetFunction(New<FunctionTemplate>(duktape::runSync)).ToLocalChecked());
-/*
+
 	Set(target, 
 		New<String>("run").ToLocalChecked(), 
 		GetFunction(New<FunctionTemplate>(duktape::run)).ToLocalChecked());
-*/
+
 }
 
 } // unnamed namespace
