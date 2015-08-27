@@ -12,7 +12,8 @@
 	"dependencies": 
 	{
 		"bindings": "1.1.1",
-		"node-gyp": "~0.12.1"
+		"node-gyp": "~0.12.1",
+		"nan": "2.0.7"
 	},
 	"devDependencies": {
 		"mocha": "1.17.1"
