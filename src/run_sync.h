@@ -1,9 +1,9 @@
 #pragma once
 
-#include <v8.h>
+#include <nan.h>
 
 namespace duktape {
 
-v8::Handle<v8::Value> runSync(const v8::Arguments& args);
+NAN_METHOD(runSync);
 
 }  // namespace duktape

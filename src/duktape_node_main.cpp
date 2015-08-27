@@ -1,18 +1,27 @@
 #include "run_sync.h"
-#include "run_async.h"
+//#include "run_async.h"
 
-#include <node.h>
-#include <v8.h>
+#include <nan.h>
 
 namespace {
 
-using namespace v8;
-
 // Main entrypoint
-void init(Handle<Object> exports) 
+NAN_MODULE_INIT(init)
 {
-	exports->Set(String::NewSymbol("runSync"), FunctionTemplate::New(duktape::runSync)->GetFunction());
-	exports->Set(String::NewSymbol("run"), FunctionTemplate::New(duktape::run)->GetFunction());
+	using Nan::GetFunction;
+	using Nan::New;
+	using Nan::Set;
+	using v8::String;
+	using v8::FunctionTemplate;
+
+	Set(target, 
+		New<String>("runSync").ToLocalChecked(), 
+		GetFunction(New<FunctionTemplate>(duktape::runSync)).ToLocalChecked());
+/*
+	Set(target, 
+		New<String>("run").ToLocalChecked(), 
+		GetFunction(New<FunctionTemplate>(duktape::run)).ToLocalChecked());
+*/
 }
 
 } // unnamed namespace

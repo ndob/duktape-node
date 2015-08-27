@@ -13,8 +13,7 @@
 				"src/duktape_node_main.cpp", 
 				"src/duktapevm.cpp",
 				"src/callbackcache.cpp",
-				"src/run_sync.cpp",
-				"src/run_async.cpp"
+				"src/run_sync.cpp"
 			],
 			"conditions": [
 				["OS=='linux'", {
