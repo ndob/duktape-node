@@ -6,7 +6,8 @@
 			"dependencies": ["libduktape"],
 			"include_dirs": [
 				"lib/duktape/src",
-				"src"
+				"src",
+				"<!(node -e \"require('nan')\")"
 			],
 			"sources": [ 
 				"src/duktape_node_main.cpp", 
