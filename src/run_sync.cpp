@@ -66,11 +66,8 @@ NAN_METHOD(runSync)
 				return;
 			}
 
-			Local<Function> apiCallbackFunc = Local<Function>::Cast(value);
-
-			auto duktapeToNodeBridge = duktape::Callback(CallbackHelper(apiCallbackFunc));
-
 			String::Utf8Value keyStr(key);
+			CallbackHelper duktapeToNodeBridge(Local<Function>::Cast(value));
 			vm.registerCallback(std::string(*keyStr), duktapeToNodeBridge);
 		}
 	}
