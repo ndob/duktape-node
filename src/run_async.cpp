@@ -174,13 +174,9 @@ void callV8FunctionOnMainThread(uv_async_t* handle, int status)
 	Handle<Value> argv[1];
 	argv[0] = Nan::New(signalData->parameter).ToLocalChecked();
 
-#if (NODE_MODULE_VERSION > NODE_0_10_MODULE_VERSION)
-	auto callbackHandle = Local<Function>::New(v8::Isolate::GetCurrent(), signalData->callback);
-#else
-	auto callbackHandle = Nan::New(signalData->callback);
-#endif
-
+	auto callbackHandle = Nan::New<Function>(signalData->callback);
 	auto retVal = callbackHandle->Call(Nan::GetCurrentContext()->Global(), 1, argv);
+	
 	String::Utf8Value retString(retVal);
 	signalData->returnValue = std::string(*retString);
 
