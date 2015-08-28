@@ -205,7 +205,6 @@ void onWorkDone(uv_work_t* req, int status)
 
 namespace duktape {
 
-//Handle<Value> run(const Arguments& args) 
 NAN_METHOD(run)
 {
 	if(info.Length() < 5) 
@@ -223,7 +222,6 @@ NAN_METHOD(run)
 	String::Utf8Value functionName(info[0]->ToString());
 	String::Utf8Value parameters(info[1]->ToString());
 	String::Utf8Value script(info[2]->ToString());
-
 
 	auto workReq = new WorkRequest(	std::string(*functionName), 
 											std::string(*parameters), 
