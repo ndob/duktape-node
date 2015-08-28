@@ -9,6 +9,10 @@ describe('Duktape API', function () {
     return param + "!";
   };
 
+  var callbackFunc2 = function(param) {
+    return "!" + param;
+  };
+
   it('host program should be able to provide an API (sync)', function (finished) {
     var script = "\
           function test() {\n\
@@ -127,4 +131,43 @@ describe('Duktape API', function () {
     equal(ret, "hello!hello!hello!");
     finished();
   });
+
+  it('host program should run API calls in correct order (sync)', function (finished) {
+    var script = "\
+          function test() {\n\
+            var ret = exclamate('hello') + exclamate2('world') + exclamate3('yes');\
+            return ret;\n\
+          }\n\
+        ";
+    var API = {
+      exclamate: callbackFunc,
+      exclamate2: callbackFunc,
+      exclamate3: callbackFunc2
+    };
+
+    var ret = duktape.runSync("test", "", script, API);
+    equal(ret, "hello!world!!yes");
+    finished();
+  });
+
+  it('host program should run API calls in correct order (async)', function (finished) {
+    var script = "\
+          function test() {\n\
+            var ret = exclamate('hello') + exclamate2('world') + exclamate3('yes');\
+            return ret;\n\
+          }\n\
+        ";
+    var API = {
+      exclamate: callbackFunc,
+      exclamate2: callbackFunc,
+      exclamate3: callbackFunc2
+    };
+
+    duktape.run("test", "", script, API, function(error, ret) {
+      equal(error, false);
+      equal(ret, "hello!world!!yes");
+      finished();
+    });
+  });
+
 });
