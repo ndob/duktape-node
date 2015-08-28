@@ -2,30 +2,23 @@
 
 #include "duktapevm.h"
 #include "callback.h"
+#include "nan_addon.h"
 
 #include <string>
 #include <vector>
 
 using namespace v8;
-using node::FatalException;
 
 namespace {
 
-#if (NODE_MODULE_VERSION > NODE_0_10_MODULE_VERSION)
-typedef Nan::Persistent<Function, CopyablePersistentTraits<Function>> PersistentCallback;
-#else
-typedef Nan::Persistent<Function, Nan::CopyablePersistentTraits<Function>> PersistentCallback;
-#endif
+using node::FatalException;
+using nan_addon::PersistentCallback;
 
 // Forward declaration for APICallbackSignaling destructor.
 void cleanupUvAsync(uv_handle_s* handle);
 
 // Forward declaration for CallbackHelper.
-#if (NODE_MODULE_VERSION > NODE_0_10_MODULE_VERSION)
-void callV8FunctionOnMainThread(uv_async_t* handle);
-#else
-void callV8FunctionOnMainThread(uv_async_t* handle, int status);
-#endif
+NAN_ADDON_UV_ASYNC_CB(callV8FunctionOnMainThread);
 
 struct WorkRequest
 {
@@ -162,11 +155,7 @@ void cleanupUvAsync(uv_handle_s* handle)
 	delete (uv_async_t*) handle;
 }
 
-#if (NODE_MODULE_VERSION > NODE_0_10_MODULE_VERSION)
-void callV8FunctionOnMainThread(uv_async_t* handle)
-#else
-void callV8FunctionOnMainThread(uv_async_t* handle, int status)
-#endif
+NAN_ADDON_UV_ASYNC_CB(callV8FunctionOnMainThread)
 {
 	auto signalData = static_cast<APICallbackSignaling*> (handle->data);
 	uv_mutex_lock(&signalData->mutex);
