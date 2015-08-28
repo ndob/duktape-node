@@ -11,13 +11,21 @@ using node::FatalException;
 
 namespace {
 
+#if (NODE_MODULE_VERSION > NODE_0_10_MODULE_VERSION)
 typedef Nan::Persistent<Function, CopyablePersistentTraits<Function>> PersistentCallback;
+#else
+typedef Nan::Persistent<Function, Nan::CopyablePersistentTraits<Function>> PersistentCallback;
+#endif
 
 // Forward declaration for APICallbackSignaling destructor.
 void cleanupUvAsync(uv_handle_s* handle);
 
 // Forward declaration for CallbackHelper.
-void callV8FunctionOnMainThread(uv_async_t* handle); // 0.10 needs this:, int status);
+#if (NODE_MODULE_VERSION > NODE_0_10_MODULE_VERSION)
+void callV8FunctionOnMainThread(uv_async_t* handle);
+#else
+void callV8FunctionOnMainThread(uv_async_t* handle, int status);
+#endif
 
 struct WorkRequest
 {
@@ -154,7 +162,11 @@ void cleanupUvAsync(uv_handle_s* handle)
 	delete (uv_async_t*) handle;
 }
 
-void callV8FunctionOnMainThread(uv_async_t* handle) 
+#if (NODE_MODULE_VERSION > NODE_0_10_MODULE_VERSION)
+void callV8FunctionOnMainThread(uv_async_t* handle)
+#else
+void callV8FunctionOnMainThread(uv_async_t* handle, int status)
+#endif
 {
 	auto signalData = static_cast<APICallbackSignaling*> (handle->data);
 	uv_mutex_lock(&signalData->mutex);
@@ -162,7 +174,12 @@ void callV8FunctionOnMainThread(uv_async_t* handle)
 	Handle<Value> argv[1];
 	argv[0] = Nan::New(signalData->parameter).ToLocalChecked();
 
+#if (NODE_MODULE_VERSION > NODE_0_10_MODULE_VERSION)
 	auto callbackHandle = Local<Function>::New(v8::Isolate::GetCurrent(), signalData->callback);
+#else
+	auto callbackHandle = Nan::New(signalData->callback);
+#endif
+
 	auto retVal = callbackHandle->Call(Nan::GetCurrentContext()->Global(), 1, argv);
 	String::Utf8Value retString(retVal);
 	signalData->returnValue = std::string(*retString);
