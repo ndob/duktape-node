@@ -11,6 +11,8 @@ using node::FatalException;
 
 namespace {
 
+typedef Nan::Persistent<Function, CopyablePersistentTraits<Function>> PersistentCallback;
+
 // Forward declaration for APICallbackSignaling destructor.
 void cleanupUvAsync(uv_handle_s* handle);
 
@@ -31,15 +33,10 @@ struct WorkRequest
 
 	~WorkRequest()
 	{
-		/*for(auto it = apiCallbackFunctions.begin(); it != apiCallbackFunctions.end(); ++it)
-		{
-			it->Reset();
-		}*/
 		callback.Reset();
 	}
 
 	duktape::DuktapeVM vm;
-	//std::vector< Nan::Persistent<Function> > apiCallbackFunctions;
 
 	// in
 	std::string functionName;
@@ -78,15 +75,14 @@ private:
 
 struct APICallbackSignaling
 {
-	APICallbackSignaling(Nan::Persistent<Function>* cb, std::string parameter, uv_async_cb cbFunc):
-	 parameter(parameter)
+	APICallbackSignaling(const PersistentCallback& cb, std::string parameter, uv_async_cb cbFunc):
+	 callback(cb)
+	,parameter(parameter)
 	,returnValue("")
 	,done(false)
 	,cbFunc(cbFunc)
 	,async(new uv_async_t)
 	{
-		callback.Reset(*cb);
-
 		uv_mutex_init(&mutex);
 		uv_cond_init(&cv);
 		uv_async_init(uv_default_loop(), async, cbFunc);	
@@ -99,7 +95,7 @@ struct APICallbackSignaling
 		uv_close((uv_handle_t*) async, &cleanupUvAsync);
 	}
 
-	Nan::Persistent<Function> callback;
+	const PersistentCallback& callback;
 	std::string parameter;
 	std::string returnValue;
 
@@ -120,11 +116,16 @@ struct CallbackHelper
 	{
 	}
 
+	~CallbackHelper()
+	{
+		m_persistentApiCallbackFunc.Reset();
+	}
+
 	std::string operator()(const std::string& paramString)
 	{
 		// We're on not on libuv/V8 main thread. Signal main to run 
 		// callback function and wait for an answer.
-		APICallbackSignaling cbsignaling(&m_persistentApiCallbackFunc, 
+		APICallbackSignaling cbsignaling(m_persistentApiCallbackFunc, 
 										paramString,
 										callV8FunctionOnMainThread);
 						
@@ -144,7 +145,7 @@ struct CallbackHelper
 	}
 
 private:
-	Nan::Persistent<Function> m_persistentApiCallbackFunc;
+	PersistentCallback m_persistentApiCallbackFunc;
 };
 
 void cleanupUvAsync(uv_handle_s* handle)
@@ -153,7 +154,7 @@ void cleanupUvAsync(uv_handle_s* handle)
 	delete (uv_async_t*) handle;
 }
 
-void callV8FunctionOnMainThread(uv_async_t* handle, int status) 
+void callV8FunctionOnMainThread(uv_async_t* handle) 
 {
 	auto signalData = static_cast<APICallbackSignaling*> (handle->data);
 	uv_mutex_lock(&signalData->mutex);
@@ -161,7 +162,7 @@ void callV8FunctionOnMainThread(uv_async_t* handle, int status)
 	Handle<Value> argv[1];
 	argv[0] = Nan::New(signalData->parameter).ToLocalChecked();
 
-	auto callbackHandle = Nan::New(signalData->callback);
+	auto callbackHandle = Local<Function>::New(v8::Isolate::GetCurrent(), signalData->callback);
 	auto retVal = callbackHandle->Call(Nan::GetCurrentContext()->Global(), 1, argv);
 	String::Utf8Value retString(retVal);
 	signalData->returnValue = std::string(*retString);
@@ -245,14 +246,10 @@ NAN_METHOD(run)
 				Nan::ThrowError(Nan::New("Error in API-definition").ToLocalChecked());
 				return;
 			}
-
+			
+			String::Utf8Value keyStr(key);
 			CallbackHelper duktapeToNodeBridge(Local<Function>::Cast(value));
-
-			// Switch ownership of Persistent-Function to workReq
-			//workReq->apiCallbackFunctions.push_back(persistentApiCallbackFunc);
-
-			//String::Utf8Value keyStr(key);
-			//workReq->vm.registerCallback(std::string(*keyStr), std::move(duktapeToNodeBridge));
+			workReq->vm.registerCallback(std::string(*keyStr), duktapeToNodeBridge);
 		}
 	}
 
