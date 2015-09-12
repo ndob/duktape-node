@@ -193,13 +193,13 @@ void onWorkDone(uv_work_t* req, int status)
 	argv[0] = Nan::New(work->hasError);
 	argv[1] = Nan::New(work->returnValue).ToLocalChecked();
 
-	Nan::TryCatch try_catch;
+	TryCatch try_catch;
 	auto callbackHandle = Nan::New(work->callback);
 	callbackHandle->Call(Nan::GetCurrentContext()->Global(), 2, argv);
 
 	if (try_catch.HasCaught()) 
 	{
-		Nan::FatalException(try_catch);
+		FatalException(try_catch);
 	}
 }
 
