@@ -21,6 +21,7 @@
 					"cflags": [
 						"-O2",
 						"-std=c++0x",
+						"-pedantic-errors",
 						"-Wall",
 						"-fstrict-aliasing",
 						"-fomit-frame-pointer"
