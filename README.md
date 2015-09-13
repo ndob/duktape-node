@@ -6,6 +6,8 @@ Simple [Duktape Javascript engine](http://duktape.org/) integration for node.js.
 
 This package provides facilities for running a single script on an isolated Duktape virtual machine.
 
+Package has been tested on linux and should be compatible with node.js versions: 0.10.x, 0.11.x, 0.12.x and 4.x.
+
 ## Installing
 ```shell
 npm install duktape
@@ -125,6 +127,5 @@ This package just runs scripts on duktape VM without doing much else. Everything
   * Formatting
   
 ## Known issues
-* Probably(?) does not compile on other compilers than gcc (has been tested on linux: gcc4.8.4, gcc4.6.4, gcc4.4.7).
+* To use this package with node 4.0.0 you should build with gcc version >= 4.8 or clang >= 3.4.
 * No async support from defined API-functions back to duktape (ie. no callbacks).
-* Tested and compatible only with node.js versions: 0.10.x, 0.11.x, 0.12.x.
