@@ -159,6 +159,7 @@ NAN_ADDON_UV_ASYNC_CB(callV8FunctionOnMainThread)
 	auto signalData = static_cast<APICallbackSignaling*> (handle->data);
 	uv_mutex_lock(&signalData->mutex);
 
+	Nan::HandleScope scope;
 	Handle<Value> argv[1];
 	argv[0] = Nan::New(signalData->parameter).ToLocalChecked();
 
@@ -188,6 +189,7 @@ void onWorkDone(uv_work_t* req, int status)
 	ScopedUvWorkRequest uvReq(req);
 	WorkRequest* work = uvReq.getWorkRequest();
 
+	Nan::HandleScope scope;
 	Handle<Value> argv[2];
 	argv[0] = Nan::New(work->hasError);
 	argv[1] = Nan::New(work->returnValue).ToLocalChecked();

@@ -16,6 +16,7 @@ struct CallbackHelper
 
 	std::string operator()(const std::string& paramString)
 	{
+		Nan::HandleScope scope;				
 		Handle<Value> argv[1];
 		argv[0] = Nan::New(paramString).ToLocalChecked();
 
